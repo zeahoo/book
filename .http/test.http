@@ -1,0 +1,40 @@
+###
+POST http://localhost:5173/hello
+
+
+###
+GET http://localhost:5173/
+
+
+###
+GET http://localhost:5173/hello
+
+###
+GET http://localhost:5173/hi
+
+###
+GET http://localhost:5173/hey
+
+###
+GET http://localhost:5173/greet/user/Bob
+
+
+###
+GET http://localhost:5173/user
+
+
+###
+GET http://localhost:5173/greet/user/Bob/21
+
+###
+GET http://localhost:5173?q=yyyy&limit=10&offset=1
+
+
+###
+POST http://localhost:5173/
+Content-Type: application/json
+
+{
+  "name": "Bob",
+  "age": 30
+}
