@@ -1,35 +1,32 @@
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { z } from "zod";
-
+import { book } from "./db/schema";
+import { drizzle } from "drizzle-orm/neon-http";
+import { eq } from "drizzle-orm";
+interface Env {
+  DATABASE_URL: string;
+}
 export interface Book {
   id: number;
   title: string;
   author: string;
 }
 
-let books: Book[] = [];
-
-const book = new Hono()
-  .get(
-    "/",
-    async (c, next) => {
-      console.log("GET /book before");
-      await next();
-      console.log("GET /book after");
-    },
-    (c) => {
-      console.log("GET /book");
-      return c.json(books);
-    }
-  )
-  .get("/:id", (c) => {
+const bookRoute = new Hono<{ Bindings: Env }>()
+  .get("/", async (c) => {
+    const db = drizzle(c.env.DATABASE_URL);
+    const result = await db.select().from(book);
+    return c.json(result);
+  })
+  .get("/:id", async (c) => {
+    const db = drizzle(c.env.DATABASE_URL);
     const { id } = c.req.param();
-    const book = books.find((book) => book.id === Number(id));
-    if (!book) {
+    const [result] = await db.select().from(book).where(eq(book.id, id));
+    if (!result) {
       return c.json({ message: "Book not found" }, 404);
     }
-    return c.json(book);
+    return c.json(result);
   })
   .post(
     "/",
@@ -51,26 +48,32 @@ const book = new Hono()
     ),
     async (c) => {
       const { title, author } = await c.req.json();
-      const id = books.length + 1;
-      books.push({ id, title, author });
-      return c.json({ id, title, author }, 201);
+      const db = drizzle(c.env.DATABASE_URL);
+      const result = await db.insert(book).values({ title, author });
+      return c.json(result, 201);
     }
   )
   .put("/:id", async (c) => {
     const { id } = c.req.param();
     const { title, author } = await c.req.json();
-    const book = books.find((book) => book.id === Number(id));
-    if (!book) {
+    const db = drizzle(c.env.DATABASE_URL);
+    const result = await db
+      .update(book)
+      .set({ title, author })
+      .where(eq(book.id, id));
+    if (!result) {
       return c.json({ message: "Book not found" }, 404);
     }
-    book.title = title;
-    book.author = author;
-    return c.json(book, 200);
+    return c.json(result, 200);
   })
-  .delete("/:id", (c) => {
-    const id = c.req.param("id");
-    books = books.filter((book) => book.id !== Number(id));
+  .delete("/:id", async (c) => {
+    const db = drizzle(c.env.DATABASE_URL);
+    const { id } = c.req.param();
+    const result = await db.delete(book).where(eq(book.id, id));
+    if (!result) {
+      return c.json({ message: "Book not found" }, 404);
+    }
     return c.json({ message: "Book deleted" });
   });
 
-export default book;
+export default bookRoute;

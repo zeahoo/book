@@ -23,6 +23,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       build(),
       devServer({
+        adapter,
         entry: "src/index.tsx",
       }),
     ],

@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import book from "./book";
+import bookRoute from "./book";
 import { customLogger } from "./middleware/customLogger";
 const app = new Hono();
 
@@ -37,7 +37,7 @@ const route = app
     );
   })
 
-  .route("/book", book);
+  .route("/book", bookRoute);
 
 export type AppType = typeof route;
 export default app;
